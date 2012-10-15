@@ -2,25 +2,29 @@
 import sys, hashlib, getpass, time, argparse
 from pymongo import Connection
 
-connection = Connection('172.16.49.130',27017)
-db = connection.canopsis
-collection = db.object
+
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-l', '--list-users')
-parser.add_argument('-a', '--add-user')
-parser.add_argument('-d', '--delete-user')
-parser.add_argument('-c', '--user-chpass')
-parser.add_argument('-u', '--user-name')
-parser.add_argument('-p', '--user-pass')
-parser.add_argument('-m', '--user-mail')
+parser.add_argument('-list', '--list-users')
+parser.add_argument('-add',  '--add-user')
+parser.add_argument('-del',  '--delete-user')
+parser.add_argument('-chpa', '--user-chpass')
+parser.add_argument('-user', '--user-name')
+parser.add_argument('-pass', '--user-pass')
+parser.add_argument('-mail', '--user-mail')
+parser.add_argument('-link', '--server-link', default='127.0.0.1')
+parser.add_argument('-port', '--server-port', default=27017)
 
 if len(sys.argv)==1:
     parser.print_help()
     sys.exit(1)
 
 args = parser.parse_args()
+
+connection = Connection(args.server_link, args.server_port)
+db = connection.canopsis
+collection = db.object
 
 if (args.list_users):
 	print "list_user is true"
