@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import sys, hashlib, getpass, time, argparse
+from caccount import caccount
 from pymongo import Connection
+
 
 parser = argparse.ArgumentParser()
 
@@ -11,8 +13,8 @@ parser.add_argument('-chpa', '--user-chpass')
 parser.add_argument('-user', '--user-name')
 parser.add_argument('-pass', '--user-pass')
 parser.add_argument('-mail', '--user-mail')
-parser.add_argument('-link', '--server-link',default='127.0.0.1')
-#parser.add_argument('-port', '--server-port',type=int default=27017)
+parser.add_argument('-link', '--server-link', default='127.0.0.1')
+parser.add_argument('-port', '--server-port', default=27017)
 
 if len(sys.argv)==1:
     parser.print_help()
@@ -20,23 +22,18 @@ if len(sys.argv)==1:
 
 args = parser.parse_args()
 
-connection = Connection(args.server_link, 27017)
+connection = Connection(args.server_link, args.server_port)
 db = connection.canopsis
 collection = db.object
 
 
 
 if (args.list_users):
-	print "list_user is true"
 	for i in collection.find():
 		if i.get('crecord_type', False) == 'account':
-			my_name  = i['user']
-			my_pass  = i['shadowpasswd']
-			my_mail  = i['mail']
-			print "User: %s" % (my_name)
-			print "Mail: %s" % (my_mail)
-			print "Pass: %s" % (my_pass)
-			print ""
+			user_account = caccount(user=i['user'], group="capensis")
+			user_account.cat()
+
 
 if (args.add_user):
 	print "entering add_user case"
