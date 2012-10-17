@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 import sys, hashlib, getpass, time, argparse
 from caccount import caccount
+from cstorage import cstorage
 from pymongo import Connection
+import logging
 
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)s %(levelname)s %(message)s',
+                    )
 
 parser = argparse.ArgumentParser()
 
@@ -67,7 +72,13 @@ if (args.delete_user):
 		print "args.user_name is None"
 		sys.exit(1)
 	else:
-		collection.remove({'_id' : 'account.'+args.user_name})
+		user_account = caccount(user="root", group="root")
+		my_storage = cstorage(user_account, namespace='object', logging_level=logging.DEBUG, mongo_host=args.server_link)
+		
+		my_record = my_storage.find({'user' : args.user_name})
+		my_storage.remove(my_record, account=user_account)
+		print "DEBUG mrecord = ", my_record
+		print "DEBUG mstorage = ",my_storage
 
 if (args.user_chpass):
 		if not args.user_name:
@@ -80,7 +91,7 @@ if (args.user_chpass):
 			m = hashlib.sha1()
 			m.update(args.user_pass)			
 			collection.update({'crecord_type': 'account', 'user' : args.user_name}, {'$set': {'shadowpasswd' : m.hexdigest()}})
-
+	
 
 
 
