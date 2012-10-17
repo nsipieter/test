@@ -28,23 +28,11 @@ if len(sys.argv)==1:
 
 args = parser.parse_args()
 
-connection = Connection(args.server_link, args.server_port)
-db = connection.canopsis
-collection = db.object
-
 user_account = caccount(user="root", group="root")
 my_storage = cstorage(user_account, namespace='object', logging_level=logging.DEBUG, mongo_host=args.server_link)
 
 
 if (args.list_users):
-
-# current: user_account.cat utilise la couche d'abstraction
-	for i in collection.find():
-		if i.get('crecord_type', False) == 'account':
-			user_account = caccount(user=i['user'], group="capensis")
-			user_account.cat()
-
-
 	records = my_storage.find({'crecord_type':'account'},account=user_account)
 	for record in records:
 		record_dict = record.dump()
@@ -70,18 +58,7 @@ if (args.add_user):
 		m.update(args.user_pass)
 		cpassword = m.hexdigest()
 		time_stamp = int(time.time())
-		"""
-		post = {u'aaa_access_owner': [u'r', u'w'], u'aaa_group': u'group.CPS_'+ args.user_name, 
-		u'aaa_admin_group': u'group.CPS_account_admin', u'children': [], 
-		u'firstname': u'maxwell', u'shadowpasswd': cpassword, u'aaa_access_unauth': [], 
-		u'crecord_type': u'account', u'mail': args.user_mail, u'crecord_creation_time': time_stamp,
-		u'crecord_write_time': time_stamp, u'enable': True,	u'aaa_access_group': [u'r'], 
-		u'parent': [], u'lastname': args.user_name,
-		u'authkey': u'5b7d1ad4384332a0bd0030a4f82fc667989fe73d43b247a2f0dbce40', 
-		u'user': args.user_name, u'groups': [], u'crecord_name': args.user_name, 
-		u'aaa_owner': u'account.'+ args.user_name, u'aaa_access_other': [], u'_id': u'account.'+args.user_name}
-		#collection.insert(post)
-		"""
+
 		post = caccount(user=args.user_name, group="capensis", mail=args.user_mail, )
 		my_record = caccount(post, storage=my_storage)
 		my_storage.put(my_record, namespace='object')
