@@ -1,17 +1,15 @@
 #!/usr/bin/env python
-import sys, hashlib, getpass, time, argparse
+import sys, hashlib, getpass, time, argparse, logging
 from caccount import caccount
 from cstorage import cstorage
 from pymongo import Connection
 from crecord import crecord
-import logging
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)s %(levelname)s %(message)s',
                     )
 
 parser = argparse.ArgumentParser()
-
 parser.add_argument('-list', '--list-users')
 parser.add_argument('-add',  '--add-user')
 parser.add_argument('-del',  '--delete-user')
@@ -27,20 +25,20 @@ if len(sys.argv)==1:
     sys.exit(1)
 
 args = parser.parse_args()
-
 user_account = caccount(user="root", group="root")
 my_storage = cstorage(user_account, namespace='object', logging_level=logging.DEBUG, mongo_host=args.server_link)
 
-
 if (args.list_users):
 	records = my_storage.find({'crecord_type':'account'},account=user_account)
+	counter = 0
 	for record in records:
+		counter += 1 
 		record_dict = record.dump()
 		print "User: %s" % (record_dict['user'])
 		print "Mail: %s" % (record_dict['mail'])
 		print "Pass: %s" % (record_dict['shadowpasswd'])
 		print ""
-
+	print "DEBUG: total accounts = %s" % counter
 
 if (args.add_user):
 	print "entering add_user case"
@@ -58,21 +56,17 @@ if (args.add_user):
 		m.update(args.user_pass)
 		cpassword = m.hexdigest()
 		time_stamp = int(time.time())
-
 		post = caccount(user=args.user_name, group="capensis", mail=args.user_mail, )
 		my_record = caccount(post, storage=my_storage)
-		my_storage.put(my_record, namespace='object')
+		my_storage.put(my_record)
 		output = my_storage.find({'crecord_type':'account'},account=user_account)
-		print "len output = %s" % (len(output))
-
+		print "DEBUG: len output = %s" % (len(output))
 	
 if (args.delete_user):
 	if not args.user_name:
 		print "args.user_name is None"
 		sys.exit(1)
 	else:
-
-		
 		my_record = my_storage.find({'user' : args.user_name})
 		my_storage.remove(my_record, account=user_account)
 		print "DEBUG mrecord = ", my_record
@@ -86,14 +80,10 @@ if (args.user_chpass):
 			print "args.user_pass is None"
 			sys.exit(1)
 		else:
-			m = hashlib.sha1()
-			m.update(args.user_pass)			
-			collection.update({'crecord_type': 'account', 'user' : args.user_name}, {'$set': {'shadowpasswd' : m.hexdigest()}})
-	
-
-
-
-
+			my_account = caccount(user=args.user_name)
+			my_account.passwd(args.user_pass)
+			print ("DEBUG: \n===== \n \n"), my_account.cat()
+			my_storage.put(my_account)
 
 
 
