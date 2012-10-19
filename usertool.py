@@ -19,6 +19,7 @@ parser.add_argument('-pass', '--user-pass')
 parser.add_argument('-mail', '--user-mail')
 parser.add_argument('-link', '--server-link', default='127.0.0.1')
 parser.add_argument('-port', '--server-port', default=27017)
+parser.add_argument('-debg', '--debug-output')
 
 if len(sys.argv)==1:
     parser.print_help()
@@ -32,13 +33,15 @@ if (args.list_users):
 	records = my_storage.find({'crecord_type':'account'},account=user_account)
 	counter = 0
 	for record in records:
+		#record.cat()
 		counter += 1 
 		record_dict = record.dump()
 		print "User: %s" % (record_dict['user'])
 		print "Mail: %s" % (record_dict['mail'])
 		print "Pass: %s" % (record_dict['shadowpasswd'])
 		print ""
-	print "DEBUG: total accounts = %s" % counter
+	if (args.debug_output):
+		print "DEBUG: total accounts = %s" % counter
 
 if (args.add_user):
 	print "entering add_user case"
@@ -52,15 +55,13 @@ if (args.add_user):
 		print "args.user_mail is None"
 		sys.exit(1)
 	else:
-		m = hashlib.sha1()
-		m.update(args.user_pass)
-		cpassword = m.hexdigest()
-		time_stamp = int(time.time())
-		post = caccount(user=args.user_name, group="capensis", mail=args.user_mail, )
-		my_record = caccount(post, storage=my_storage)
+		my_account = caccount(user=args.user_name, group="capensis", mail=args.user_mail)
+		my_account.passwd(args.user_pass)
+		my_record = caccount(my_account, storage=my_storage)
 		my_storage.put(my_record)
 		output = my_storage.find({'crecord_type':'account'},account=user_account)
-		print "DEBUG: len output = %s" % (len(output))
+		if (args.debug_output):
+			print "DEBUG: len output = %s" % (len(output))
 	
 if (args.delete_user):
 	if not args.user_name:
@@ -69,8 +70,9 @@ if (args.delete_user):
 	else:
 		my_record = my_storage.find({'user' : args.user_name})
 		my_storage.remove(my_record, account=user_account)
-		print "DEBUG mrecord = ", my_record
-		print "DEBUG mstorage = ",my_storage
+		if (args.debug_output):
+			print "DEBUG mrecord = ", my_record
+			print "DEBUG mstorage = ",my_storage
 
 if (args.user_chpass):
 		if not args.user_name:
@@ -82,8 +84,10 @@ if (args.user_chpass):
 		else:
 			my_account = caccount(user=args.user_name)
 			my_account.passwd(args.user_pass)
-			print ("DEBUG: \n===== \n \n"), my_account.cat()
 			my_storage.put(my_account)
+			if (args.debug_output):
+				print ("DEBUG: \n===== \n \n"), my_account.cat()
+			
 
 
 
