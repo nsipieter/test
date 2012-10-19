@@ -26,11 +26,15 @@ if len(sys.argv)==1:
     sys.exit(1)
 
 args = parser.parse_args()
-user_account = caccount(user="root", group="root")
-my_storage = cstorage(user_account, namespace='object', logging_level=logging.DEBUG, mongo_host=args.server_link)
+if (args.debug_output):
+	verbosity = logging.DEBUG
+else:
+	verbosity = logging.ERROR
+whoami = caccount(user="root", group="root")
+my_storage = cstorage(whoami, namespace='object', logging_level=verbosity, mongo_host=args.server_link)
 
 if (args.list_users):
-	records = my_storage.find({'crecord_type':'account'},account=user_account)
+	records = my_storage.find({'crecord_type':'account'},account=whoami)
 	counter = 0
 	for record in records:
 		#record.cat()
@@ -44,7 +48,6 @@ if (args.list_users):
 		print "DEBUG: total accounts = %s" % counter
 
 if (args.add_user):
-	print "entering add_user case"
 	if not args.user_name:
 		print "args.user_name is None"
 		sys.exit(1)
@@ -59,7 +62,7 @@ if (args.add_user):
 		my_account.passwd(args.user_pass)
 		my_record = caccount(my_account, storage=my_storage)
 		my_storage.put(my_record)
-		output = my_storage.find({'crecord_type':'account'},account=user_account)
+		output = my_storage.find({'crecord_type':'account'},account=whoami)
 		if (args.debug_output):
 			print "DEBUG: len output = %s" % (len(output))
 	
@@ -69,7 +72,7 @@ if (args.delete_user):
 		sys.exit(1)
 	else:
 		my_record = my_storage.find({'user' : args.user_name})
-		my_storage.remove(my_record, account=user_account)
+		my_storage.remove(my_record, account=whoami)
 		if (args.debug_output):
 			print "DEBUG mrecord = ", my_record
 			print "DEBUG mstorage = ",my_storage
