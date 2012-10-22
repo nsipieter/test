@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys, hashlib, getpass, time, argparse, logging
-from caccount import caccount
+from caccount import caccount, caccount_get, caccount_getall
 from cstorage import cstorage
 from pymongo import Connection
 from crecord import crecord
@@ -32,26 +32,26 @@ if (args.debug_output):
 	verbosity = logging.DEBUG
 else:
 	verbosity = logging.ERROR
+
 whoami = caccount(user="root", group="root")
 my_storage = cstorage(whoami, namespace='object', logging_level=verbosity, mongo_host=args.server_link)
 
-if (args.list_users):
-	records = my_storage.find({'crecord_type':'account'},account=whoami)
-	counter = 0
-	bleh()
-	for record in records:
-		#record.cat()
-		counter += 1 
-		record_dict = record.dump()
-		print "lastname: %s" % (record_dict['lastname'])
-		print "firstname: %s" % (record_dict['firstname'])
-		print "User: %s" % (record_dict['user'])
-		print "Mail: %s" % (record_dict['mail'])
-		print "Pass: %s" % (record_dict['shadowpasswd'])
-		print "groups: %s" % (record_dict['groups'])
-		print "authkey: %s" % (record_dict['authkey'])
-		print ""
+def user_exist(cstorage, user):
+	try:
+		xyz = caccount_get(cstorage,user)
+	except:
+		xyz = None
+	if (args.debug_output):
+		print ("DEBUG: xyz = %s \n" %xyz)	
+	return xyz
 
+if (args.list_users):
+	bleh = caccount_getall(my_storage)
+	counter = 0
+	for i in bleh:
+		counter +=1
+		print i.cat()
+		print " + shadowpasswd:\t",i.shadowpasswd, "\n"
 	if (args.debug_output):
 		print "DEBUG: total accounts = %s" % counter
 
@@ -74,31 +74,26 @@ if (args.add_user):
 	else:
 		my_account = caccount(firstname=args.first_name, lastname=args.last_name, user=args.user_name, group="capensis", mail=args.user_mail)
 		my_account.passwd(args.user_pass)
-		# my_record = caccount(my_account, storage=my_storage)
-		# verify if account doesn't already exist
-		if (my_storage.count({'user' : args.user_name, 'lastname': args.last_name, 'crecord_type':'account'})):
+		my_user=user_exist(my_storage, args.user_name)
+		if (my_user is None):	
+			my_storage.put(my_account)
+			print ("user %s added \n" %(args.user_name))
+		else:
 			print ("user already exist \n")
 			sys.exit(1)
-
-		my_storage.put(my_account)		
-		if (args.debug_output):
-			output = my_storage.count({'crecord_type':'account'},account=whoami)
-			print "DEBUG: len output = %s" % (len(output))
 	
 if (args.delete_user):
 	if not args.user_name:
 		print "args.user_name is None"
 		sys.exit(1)
 	else:
-		try:
-			my_record = my_storage.find({'user' : args.user_name})
-		except:
-			print "user doesn't exist\n"
+		my_user=user_exist(my_storage, args.user_name)
+		if (my_user is not None):	
+			my_storage.remove(my_user, account=whoami)
+			print ("user %s deleted \n" %(args.user_name))
+		else:
+			print ("user doesn't exist \n")
 			sys.exit(1)
-		my_storage.remove(my_record, account=whoami)
-		if (args.debug_output):
-			print "DEBUG mrecord = ", my_record
-			print "DEBUG mstorage = ",my_storage
 
 if (args.user_chpass):
 		if not args.user_name:
@@ -108,34 +103,13 @@ if (args.user_chpass):
 			print "args.user_pass is None"
 			sys.exit(1)
 		else:
-			try:
-				user_accounts = my_storage.find({'crecord_type':'account', 'user' : args.user_name},account=whoami) # get crecord_type
-				
-				# utiliser get ou plutot find_one
-				# trasformer ce crecord en caccount my_account = caccount(record=user_accounts)
-				# reste a faire caccount.showdpasswd
-
-
-
-			except:
-				print "user doesn't exist"
+			my_user=user_exist(my_storage, args.user_name)
+			if (my_user is not None):
+				my_user.passwd(args.user_pass)
+				my_storage.put(my_user)
+			else:
+				print ("user doesn't exist \n")
 				sys.exit(1)
-			
-			#backup user data before modifying anything
-			for each_entry in user_accounts:
-				user_dict 	= each_entry.dump()
-				user_fname	= user_dict['firstname']
-				user_lname	= user_dict['lastname']
-				#user_group 	= user_dict['group']
-				user_groups = user_dict['groups']
-				user_mail 	= user_dict['mail']
-			my_account = caccount(user=args.user_name, mail=user_mail, firstname=user_fname, lastname=user_lname, groups=user_groups)
-			my_account.passwd(args.user_pass)
-			my_storage.put(my_account)
-			if (args.debug_output):
-				print ("DEBUG: \n===== \n \n"), my_account.cat()
-			
-def bleh():
-	pass
+
 
 
