@@ -17,6 +17,8 @@ parser.add_argument('-chpa', '--user-chpass')
 parser.add_argument('-user', '--user-name')
 parser.add_argument('-pass', '--user-pass')
 parser.add_argument('-mail', '--user-mail')
+parser.add_argument('-fnam', '--first-name')
+parser.add_argument('-lnam', '--last-name')
 parser.add_argument('-link', '--server-link', default='127.0.0.1')
 parser.add_argument('-port', '--server-port', default=27017)
 parser.add_argument('-debg', '--debug-output')
@@ -40,9 +42,13 @@ if (args.list_users):
 		#record.cat()
 		counter += 1 
 		record_dict = record.dump()
+		print "lastname: %s" % (record_dict['lastname'])
+		print "firstname: %s" % (record_dict['firstname'])
 		print "User: %s" % (record_dict['user'])
 		print "Mail: %s" % (record_dict['mail'])
 		print "Pass: %s" % (record_dict['shadowpasswd'])
+		print "groups: %s" % (record_dict['groups'])
+		print "authkey: %s" % (record_dict['authkey'])
 		print ""
 	if (args.debug_output):
 		print "DEBUG: total accounts = %s" % counter
@@ -54,13 +60,24 @@ if (args.add_user):
 	elif not args.user_pass:
 		print "args.user_pass is None"
 		sys.exit(1)
+	elif not args.first_name:
+		print "args.first_name is None"
+		sys.exit(1)
+	elif not args.last_name:
+		print "args.last_name is None"
+		sys.exit(1)	
 	elif not args.user_mail:
 		print "args.user_mail is None"
 		sys.exit(1)
 	else:
-		my_account = caccount(user=args.user_name, group="capensis", mail=args.user_mail)
+		my_account = caccount(firstname=args.first_name, lastname=args.last_name, user=args.user_name, group="capensis", mail=args.user_mail)
 		my_account.passwd(args.user_pass)
 		my_record = caccount(my_account, storage=my_storage)
+		# verify if account doesn't already exist
+		if (my_storage.find({'user' : args.user_name, 'lastname': args.last_name})):
+			print ("user already exist \n")
+			sys.exit(1)
+
 		my_storage.put(my_record)
 		output = my_storage.find({'crecord_type':'account'},account=whoami)
 		if (args.debug_output):
@@ -71,7 +88,11 @@ if (args.delete_user):
 		print "args.user_name is None"
 		sys.exit(1)
 	else:
-		my_record = my_storage.find({'user' : args.user_name})
+		try:
+			my_record = my_storage.find({'user' : args.user_name})
+		except:
+			print "user doesn't exist\n"
+			sys.exit(1)
 		my_storage.remove(my_record, account=whoami)
 		if (args.debug_output):
 			print "DEBUG mrecord = ", my_record
@@ -85,7 +106,21 @@ if (args.user_chpass):
 			print "args.user_pass is None"
 			sys.exit(1)
 		else:
-			my_account = caccount(user=args.user_name)
+			try:
+				user_accounts = my_storage.find({'crecord_type':'account', 'user' : args.user_name},account=whoami)
+			except:
+				print "user doesn't exist"
+				sys.exit(1)
+			
+			#backup user data before modifying anything
+			for each_entry in user_accounts:
+				user_dict 	= each_entry.dump()
+				user_fname	= user_dict['firstname']
+				user_lname	= user_dict['lastname']
+				#user_group 	= user_dict['group']
+				user_groups = user_dict['groups']
+				user_mail 	= user_dict['mail']
+			my_account = caccount(user=args.user_name, mail=user_mail, firstname=user_fname, lastname=user_lname, groups=user_groups)
 			my_account.passwd(args.user_pass)
 			my_storage.put(my_account)
 			if (args.debug_output):
