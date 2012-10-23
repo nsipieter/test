@@ -36,22 +36,22 @@ else:
 whoami = caccount(user="root", group="root")
 my_storage = cstorage(whoami, namespace='object', logging_level=verbosity, mongo_host=args.server_link)
 
-def user_exist(cstorage, user):
+def user_exist(cstorage, user_name):
 	try:
-		xyz = caccount_get(cstorage,user)
+		my_user = caccount_get(cstorage,user_name)
 	except:
-		xyz = None
+		my_user = None
 	if (args.debug_output):
-		print ("DEBUG: xyz = %s \n" %xyz)	
-	return xyz
+		print ("DEBUG: my_user = %s \n" %my_user)	
+	return my_user
 
 if (args.list_users):
-	bleh = caccount_getall(my_storage)
+	all_users = caccount_getall(my_storage)
 	counter = 0
-	for i in bleh:
+	for each_user in all_users:
 		counter +=1
-		print i.cat()
-		print " + shadowpasswd:\t",i.shadowpasswd, "\n"
+		print each_user.cat()
+		print " + shadowpasswd:\t",each_user.shadowpasswd, "\n"
 	if (args.debug_output):
 		print "DEBUG: total accounts = %s" % counter
 
@@ -72,10 +72,11 @@ if (args.add_user):
 		print "args.user_mail is None"
 		sys.exit(1)
 	else:
-		my_account = caccount(firstname=args.first_name, lastname=args.last_name, user=args.user_name, group="capensis", mail=args.user_mail)
-		my_account.passwd(args.user_pass)
-		my_user=user_exist(my_storage, args.user_name)
+		my_user = user_exist(my_storage, args.user_name)
 		if (my_user is None):	
+			my_account = caccount(firstname = args.first_name, lastname = args.last_name, \
+									user=args.user_name, group="capensis", mail=args.user_mail)
+			my_account.passwd(args.user_pass)
 			my_storage.put(my_account)
 			print ("user %s added \n" %(args.user_name))
 		else:
@@ -89,7 +90,7 @@ if (args.delete_user):
 	else:
 		my_user=user_exist(my_storage, args.user_name)
 		if (my_user is not None):	
-			my_storage.remove(my_user, account=whoami)
+			my_storage.remove(my_user, account = whoami)
 			print ("user %s deleted \n" %(args.user_name))
 		else:
 			print ("user doesn't exist \n")
@@ -103,7 +104,7 @@ if (args.user_chpass):
 			print "args.user_pass is None"
 			sys.exit(1)
 		else:
-			my_user=user_exist(my_storage, args.user_name)
+			my_user = user_exist(my_storage, args.user_name)
 			if (my_user is not None):
 				my_user.passwd(args.user_pass)
 				my_storage.put(my_user)
