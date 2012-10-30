@@ -28,6 +28,9 @@ import pyperfstore2
 from optparse import OptionParser
 import sys
 
+init 	= cinit()
+logger 	= init.getLogger("CleanEventDB", level="DEBUG")
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-mode', '--work-mode', default='fake',help='choose between fake or real mode') # fake /  real
 parser.add_argument('-freshness', '--time-amount', help='int + char y/M/w/d/h/m/s')		# int
@@ -39,29 +42,22 @@ if len(sys.argv)==1:
     sys.exit(1)
 
 freshness = args.time_amount
-
 unit = {"s" : 1, "m" : 60, "h" : 60*60, "d" : 60*60*24, "w" : 60*60*24*7, "M" : 60*60*24*30, "y" : 60*60*24*365}
-
 last_char = freshness[len(freshness) -1 : ]
-print ("last_char = %s \n" %last_char)
 
 try:
 	if last_char.isdigit():
 		freshness = int(freshness)
-		print ("freshness = %s \n" %freshness)
 	else:
 		multiple = unit[last_char]
 		freshness = int(freshness[ : len(freshness)-1])
 		freshness *= multiple
-		print ("value = %s " %freshness)
 
 except Exception,err:
 	print ("exception ... %s \n" %err)
 	sys.exit(1)
 	
-init 	= cinit()
 
-logger 	= init.getLogger("CleanEventDB", level="DEBUG")
 storage = get_storage(namespace='events', logging_level=logging.ERROR, account=caccount(user="root", group="root"))
 
 if (args.work_mode=='fake'):
@@ -73,8 +69,6 @@ manager = pyperfstore2.manager(logging_level=logging.DEBUG)
 logger.debug("Clean events")
 records = storage.find(	{'$and': [
 				{'event_type': { '$in': args.event_types }},
-				#{'event_type': { '$in': [ 'check', 'sla', 'selector' ]}},
-				#{'crecord_write_time': {'$lt': int(time.time() - freshness)}}
 				{'crecord_write_time': {'$lt': int(time.time() - freshness)}}
 			]
 })
