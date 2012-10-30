@@ -105,14 +105,15 @@ if (args.user_chpass):
 					inputUserPassword1 = getpass.getpass("Enter password: ")
 					inputUserPassword2 = getpass.getpass("Confirm  password: ")
 					if (inputUserPassword1 == inputUserPassword2):
-						my_user.passwd(inputUserPassword2)
-						my_storage.put(my_user)
+						password = inputUserPassword2
 					else:
 						print ("password didn't match \n")
 						sys.exit(1)
 				elif args.user_pass:
-					my_user.passwd(args.user_pass)
-					my_storage.put(my_user)
+					password = args.user_pass
+					
+				my_user.passwd(password)
+				my_storage.put(my_user)
 			else:
 				print ("user doesn't exist \n")
 				sys.exit(1)
