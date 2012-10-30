@@ -28,18 +28,8 @@ import pyperfstore2
 from optparse import OptionParser
 import sys
 
-
-usage = "usage: %prog [-d]"
-
-#parser = OptionParser(usage=usage)
-#parser.add_option("-d", default=False, action="store_true", help="Clean dbs")
-#(options, args) = parser.parse_args()
-#do = options.d
-
 parser = argparse.ArgumentParser()
-#parser.add_argument('-do', '--do_stuff', action="store_true", default=False)  
 parser.add_argument('-mode', '--work-mode', default='fake',help='choose between fake or real mode') # fake /  real
-#parser.add_argument('-unit', '--time-unit', help='time unit: minute, hour, day, month, year')		# minute, hour, day, week, month, year
 parser.add_argument('-freshness', '--time-amount', help='int + char y/M/w/d/h/m/s')		# int
 parser.add_argument('-event', '--event-types', nargs='+', help='list of mongo filers')				# coma separated values ?
 
@@ -47,17 +37,6 @@ args = parser.parse_args()
 if len(sys.argv)==1:
     parser.print_help()
     sys.exit(1)
-
-#if (args.list_users):
-
-# DEBUG
-print ("event types = %s \n" %args.event_types)
-print ("mode = %s \n" %args.work_mode)
-print ("freshness = %s \n" %args.time_amount)
-
-# 24 hours
-#freshness = 60 * 60 * 24
-
 
 freshness = args.time_amount
 
@@ -80,58 +59,6 @@ except Exception,err:
 	print ("exception ... %s \n" %err)
 	sys.exit(1)
 	
-
-"""
-fresh_int	= ''
-fresh_char	= ''
-if (args.time_amount is not None):
-	#fresh_int = [token for token in args.time_amount.split() if token.isdigit()]  #return a list
-	for c in args.time_amount:
-		if c.isdigit():
-			fresh_int += c
-		else:
-			fresh_char += c
-	print ("fresh_int = %d \n" %int(fresh_int))
-	print ("fresh_char = %s \n" %fresh_char)
-	#freshness = int(fresh_int)
-else:
-	freshness = 60 * 60 * 24
-
-#print freshness
-print ("fresh_int = %s " %int(fresh_int))
-print ("fresh_int = %s " %type( fresh_int))
-
-if (fresh_char == 'y'):
-	freshness = int(fresh_int * 60 * 60 * 24 * 365)
-	print (" freshness for %s %s = "%fresh_int, fresh_char)
-
-elif (fresh_char == 'M'):
-	print ("M")
-
-elif (fresh_char == 'w'):
-	print ("w")
-
-elif (fresh_char == 'd'):
-	freshness = int(fresh_int) * 60 * 60
-	print ("d")
-
-elif (fresh_char == 'h'):
-
-	freshness = int(fresh_int) * 60 * 60
-	print ("h")
-
-elif (fresh_char == 'm'):
-	print ("m")
-
-elif (fresh_char == 's'):
-	print ("s")
-	freshness = int(fresh_int)
-else:
-	print ("time unit shoult be one of y/M/w/d/h/m/s \n")
-	sys.exit(1)
-"""
-
-
 init 	= cinit()
 
 logger 	= init.getLogger("CleanEventDB", level="DEBUG")
