@@ -98,10 +98,23 @@ if (args.user_chpass):
 		if not args.user_name:
 			print "args.user_name is None"
 			sys.exit(1)
+
 		elif not args.user_pass:
-			print "args.user_pass is None"
-			sys.exit(1)
-		else:
+			my_user = user_exist(my_storage, args.user_name)
+			if (my_user is not None):
+				inputUserPassword1 = getpass.getpass("Enter password: ")
+				inputUserPassword2 = getpass.getpass("Confirm  password: ")
+				if (inputUserPassword1 == inputUserPassword2):
+					my_user.passwd(inputUserPassword2)
+					my_storage.put(my_user)
+				else:
+					print ("password didn't match \n")
+					sys.exit(1)
+			else:
+				print ("user doesn't exist \n")
+				sys.exit(1)
+
+		elif args.user_pass:
 			my_user = user_exist(my_storage, args.user_name)
 			if (my_user is not None):
 				my_user.passwd(args.user_pass)
