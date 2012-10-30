@@ -32,9 +32,9 @@ init 	= cinit()
 logger 	= init.getLogger("CleanEventDB", level="DEBUG")
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-mode', '--work-mode', default='fake',help='choose between fake or real mode') # fake /  real
-parser.add_argument('-freshness', '--time-amount', help='int + char y/M/w/d/h/m/s')		# int
-parser.add_argument('-event', '--event-types', nargs='+', help='list of mongo filers')				# coma separated values ?
+parser.add_argument('-mode', '--work-mode', default='fake',help='choose between fake or real mode') 
+parser.add_argument('-freshness', '--time-amount', help='int + char y/M/w/d/h/m/s')
+parser.add_argument('-event', '--event-types', nargs='+', default=['sla', 'check','selector'], help='list of event type')
 
 args = parser.parse_args()
 if len(sys.argv)==1:
@@ -54,7 +54,7 @@ try:
 		freshness *= multiple
 
 except Exception,err:
-	print ("exception ... %s \n" %err)
+	logger.error("error %s \n" %err) 
 	sys.exit(1)
 	
 
