@@ -25,7 +25,7 @@ from cinit import cinit
 
 import pyperfstore2
 
-#from optparse import OptionParser
+from optparse import OptionParser
 import sys
 
 
@@ -37,7 +37,12 @@ usage = "usage: %prog [-d]"
 #do = options.d
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-do', '--do-stuff')
+#parser.add_argument('-do', '--do_stuff', action="store_true", default=False)  
+parser.add_argument('-mode', '--work-mode', default='fake',help='choose between fake or real mode') # fake /  real
+#parser.add_argument('-unit', '--time-unit', help='time unit: minute, hour, day, month, year')		# minute, hour, day, week, month, year
+parser.add_argument('-freshness', '--time-amount', help='int + char y/M/w/d/h/m/s')		# int
+parser.add_argument('-event', '--event-types', nargs='+', help='list of mongo filers')				# coma separated values ?
+
 args = parser.parse_args()
 if len(sys.argv)==1:
     parser.print_help()
@@ -45,16 +50,94 @@ if len(sys.argv)==1:
 
 #if (args.list_users):
 
+# DEBUG
+print ("event types = %s \n" %args.event_types)
+print ("mode = %s \n" %args.work_mode)
+print ("freshness = %s \n" %args.time_amount)
 
 # 24 hours
-freshness = 60 * 60 * 24
+#freshness = 60 * 60 * 24
+
+
+freshness = args.time_amount
+
+unit = {"s" : 1, "m" : 60, "h" : 60*60, "d" : 60*60*24, "w" : 60*60*24*7, "M" : 60*60*24*30, "y" : 60*60*24*365}
+
+last_char = freshness[len(freshness) -1 : ]
+print ("last_char = %s \n" %last_char)
+
+try:
+	if last_char.isdigit():
+		freshness = int(freshness)
+		print ("freshness = %s \n" %freshness)
+	else:
+		multiple = unit[last_char]
+		freshness = int(freshness[ : len(freshness)-1])
+		freshness *= multiple
+		print ("value = %s " %freshness)
+
+except Exception,err:
+	print ("exception ... %s \n" %err)
+	sys.exit(1)
+	
+
+"""
+fresh_int	= ''
+fresh_char	= ''
+if (args.time_amount is not None):
+	#fresh_int = [token for token in args.time_amount.split() if token.isdigit()]  #return a list
+	for c in args.time_amount:
+		if c.isdigit():
+			fresh_int += c
+		else:
+			fresh_char += c
+	print ("fresh_int = %d \n" %int(fresh_int))
+	print ("fresh_char = %s \n" %fresh_char)
+	#freshness = int(fresh_int)
+else:
+	freshness = 60 * 60 * 24
+
+#print freshness
+print ("fresh_int = %s " %int(fresh_int))
+print ("fresh_int = %s " %type( fresh_int))
+
+if (fresh_char == 'y'):
+	freshness = int(fresh_int * 60 * 60 * 24 * 365)
+	print (" freshness for %s %s = "%fresh_int, fresh_char)
+
+elif (fresh_char == 'M'):
+	print ("M")
+
+elif (fresh_char == 'w'):
+	print ("w")
+
+elif (fresh_char == 'd'):
+	freshness = int(fresh_int) * 60 * 60
+	print ("d")
+
+elif (fresh_char == 'h'):
+
+	freshness = int(fresh_int) * 60 * 60
+	print ("h")
+
+elif (fresh_char == 'm'):
+	print ("m")
+
+elif (fresh_char == 's'):
+	print ("s")
+	freshness = int(fresh_int)
+else:
+	print ("time unit shoult be one of y/M/w/d/h/m/s \n")
+	sys.exit(1)
+"""
+
 
 init 	= cinit()
 
 logger 	= init.getLogger("CleanEventDB", level="DEBUG")
 storage = get_storage(namespace='events', logging_level=logging.ERROR, account=caccount(user="root", group="root"))
 
-if not args.do_stuff:
+if (args.work_mode=='fake'):
 	logger.debug("/!\\ Simulation Mode, nothing to do /!\\")
 
 manager = pyperfstore2.manager(logging_level=logging.DEBUG)
@@ -62,27 +145,45 @@ manager = pyperfstore2.manager(logging_level=logging.DEBUG)
 ################### EVENTS
 logger.debug("Clean events")
 records = storage.find(	{'$and': [
-				{'event_type': { '$in': [ 'check', 'sla', 'selector' ]}},
+				{'event_type': { '$in': args.event_types }},
+				#{'event_type': { '$in': [ 'check', 'sla', 'selector' ]}},
+				#{'crecord_write_time': {'$lt': int(time.time() - freshness)}}
 				{'crecord_write_time': {'$lt': int(time.time() - freshness)}}
 			]
 })
+
 
 logger.debug(" + %s found" % len(records))
 
 for record in records:
 	logger.debug(" + %s" % record._id)
-	if args.do_stuff:
+	if (args.work_mode=='real'):
 		logger.debug("    -> Too old, remove it")
 		storage.remove(record)
+		
+	logger.debug("    -> Clean Metrics")
+	if record.data.get('source_type', None) == 'resource':
+		mfilter = { 'co': record.data.get('component', None), 're': record.data.get('resource', None) }
+	else:
+		mfilter = { 'co': record.data.get('component', None) }
+		
+	precords = manager.find(mfilter=mfilter)
+	
+	for precord in precords:
+		logger.debug("      + %s: %s %s -> %s" % (precord['_id'], precord['co'], precord.get('re',"-"), precord['me']))
+		if (args.work_mode=='real'):
+			logger.debug("    -> Too old, remove it")
+			manager.remove(_id=precord['_id'])
+		
 	
 ################### PERFSTORE
 logger.debug("Clean perfstore2 Metrics")
-records = manager.find(mfilter={ 'lts': {'$lt': int(time.time() - freshness)} })
+records = manager.find(mfilter={ 'lts': {'$lt': int(time.time() - freshness)}, 'me': {'$nin': [ 'cps_statechange', 'cps_statechange_nok', 'cps_statechange_0', 'cps_statechange_1', 'cps_statechange_2', 'cps_statechange_3' ]} })
 						
 logger.debug(" + %s found" % records.count())
 
 for record in records:
 	logger.debug(" + %s: %s %s -> %s" % (record['_id'], record['co'], record.get('re',"-"), record['me']))
-	if args.do_stuff:
+	if (args.work_mode=='real'):
 		logger.debug("    -> Too old, remove it")
 		manager.remove(_id=record['_id'])

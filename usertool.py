@@ -19,8 +19,6 @@ parser.add_argument('-pass', '--user-pass')
 parser.add_argument('-mail', '--user-mail')
 parser.add_argument('-fnam', '--first-name')
 parser.add_argument('-lnam', '--last-name')
-parser.add_argument('-link', '--server-link', default='127.0.0.1')
-parser.add_argument('-port', '--server-port', default=27017)
 parser.add_argument('-debg', '--debug-output')
 
 if len(sys.argv)==1:
@@ -34,7 +32,7 @@ else:
 	verbosity = logging.ERROR
 
 whoami = caccount(user="root", group="root")
-my_storage = cstorage(whoami, namespace='object', logging_level=verbosity, mongo_host=args.server_link)
+my_storage = cstorage(whoami, namespace='object', logging_level=verbosity)
 
 def user_exist(cstorage, user_name):
 	try:
@@ -50,7 +48,7 @@ if (args.list_users):
 	counter = 0
 	for each_user in all_users:
 		counter +=1
-		print each_user.cat()
+		each_user.cat()
 		print " + shadowpasswd:\t",each_user.shadowpasswd, "\n"
 	if (args.debug_output):
 		print "DEBUG: total accounts = %s" % counter
